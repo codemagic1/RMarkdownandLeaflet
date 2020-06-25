@@ -1,0 +1,68 @@
+---
+title: "How Far Is It?"
+output: html_document
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r date, include=FALSE}
+library(lubridate)
+Date <- Sys.Date()
+Weekday <- weekdays(Date)
+Month <- months(Date)
+Day <- day(Date)
+Year <- year(Date)
+```
+
+## `r Weekday` `r Month` `r Day`, `r Year`
+
+```{r tabsets, echo=FALSE, message=FALSE}
+library(shiny)
+library(leaflet)
+library(leaflet.extras)
+library(geosphere)
+
+shinyApp(
+
+# Define UI for application that draws a histogram
+ui <- fluidPage(
+
+    # Application title
+    titlePanel("Enter the Coordinates of Any Two Locations to Get the Distance Between Them"),
+
+    # Sidebar with a slider input for number of bins 
+    sidebarLayout(
+        sidebarPanel(
+            textInput("location1.lng", "Enter the first location's longitude coordinate:", value = -76.6205),
+            textInput("location1.lat", "Enter the first location's latitude coordinate:", value = 39.3299),
+            textInput("location2.lng", "Enter the second location's longitude coordinate", value = 0),
+            textInput("location2.lat", "Enter the second location's latitude coordinate", value = 51.4934),
+            br(),
+            textOutput("textOutput")
+        ),
+
+        # Show a plot of the generated distribution
+        mainPanel(
+            leafletOutput("map")
+        )
+    )
+),
+
+# Define server logic required to draw a histogram
+server <- function(input, output) {
+
+    output$map <- renderLeaflet({
+        leaflet() %>% 
+        addTiles() %>%
+        setView(lng = as.numeric(input$location1.lng), lat = as.numeric(input$location1.lat), zoom = 5) %>%
+        addMarkers(lng = c(as.numeric(input$location1.lng), as.numeric(input$location2.lng)), lat = c(as.numeric(input$location1.lat), as.numeric(input$location2.lat)), popup = c(paste("Longitude:", input$location1.lng, ", Latitude:", input$location1.lat, sep = " "), paste("Longitude:", input$location2.lng, ", Latitude:", input$location2.lat, sep = " "))) %>%
+        addPolylines(lng = c(as.numeric(input$location1.lng), as.numeric(input$location2.lng)), lat = c(as.numeric(input$location1.lat), as.numeric(input$location2.lat)))
+    })
+    
+    output$textOutput <- renderText(paste(as.numeric(distm(c(as.numeric(input$location1.lng), as.numeric(input$location1.lat)), c(as.numeric(input$location2.lng), as.numeric(input$location2.lat)), fun = distHaversine)) / 1000, "kilometres", sep = " "))
+}
+)
+```
